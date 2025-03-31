@@ -1,9 +1,11 @@
 package com.example.Standup.Service;
 
 import com.example.Standup.Entity.Teacher;
+import com.example.Standup.Enum.Role;
 import com.example.Standup.Repository.TeacherRepository;
 import com.example.Standup.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,13 +15,17 @@ import java.util.List;
 public class TeacherService {
     private final TeacherRepository teacherRepository;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder; // Inject PasswordEncoder
+
 
     public Teacher createTeacher(Teacher teacher) {
+        teacher.setRole(Role.TEACHER); // Ensure role is assigned
+
+        teacher.setPassword(passwordEncoder.encode(teacher.getPassword()));
         return teacherRepository.save(teacher);
     }
 
-    public Teacher updateTeacher(Long teacherId, Teacher teacher) {
-        teacher.setId(teacherId);
+    public Teacher updateTeacher(Teacher teacher) {
         return teacherRepository.save(teacher);
     }
 

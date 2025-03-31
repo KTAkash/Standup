@@ -23,87 +23,79 @@ export default function LoginPage() {
         body: JSON.stringify({ username, password }),
       });
 
-      const data = await response.json();
+      let responseData;
+      try {
+        responseData = await response.json();
+      } catch {
+        // If JSON parsing fails, get the raw text
+        const text = await response.text();
+        throw new Error(text || 'Login failed');
+      }
 
-      if (response.ok) {
-        // Successful login
-        const role = data.role;
+      if (!response.ok) {
+        throw new Error(responseData.message || 'Login failed');
+      }
 
-        // Redirect user based on role
-        switch (role) {
-          case 'ADMIN':
-            navigate('/admin');
-            break;
-          case 'TEACHER':
-            navigate('/teacher');
-            break;
-          case 'STUDENT':
-            navigate('/student');
-            break;
-          default:
-            setError('Unexpected user role');
+      if (responseData.token) {
+        localStorage.setItem('token', responseData.token);
+        localStorage.setItem('role', responseData.role);
+        
+        // Redirect based on role
+        switch (responseData.role) {
+          case 'ADMIN': navigate('/admin'); break;
+          case 'TEACHER': navigate('/teacher'); break;
+          case 'STUDENT': navigate('/student'); break;
+          default: setError('Unknown user role');
         }
       } else {
-        // Handle login failure
-        setError(data.message || 'Login failed. Please check your credentials.');
+        throw new Error('No token received');
       }
     } catch (error) {
       console.error('Login error:', error);
-      setError('Network error. Please try again.');
+      setError(error.message || 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-[#4A63A3] to-[#42868F] px-4">
-      <div className="w-full sm:w-96 md:max-w-sm p-8 bg-white rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold text-center mb-6">Login</h2>
+    <div className="flex justify-center items-center min-h-screen bg-gray-100">
+      <form onSubmit={handleLogin} className="bg-white p-6 rounded-lg shadow-md w-80">
+        <h2 className="text-2xl font-bold text-center mb-4">Login</h2>
+        {error && <p className="text-red-500 text-center mb-3">{error}</p>}
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-center">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleLogin}>
-          <div className="mb-4">
-            <label htmlFor="username" className="block text-gray-700">Username</label>
-            <input
-              type="text"
-              id="username"
-              className="w-full p-2 border border-gray-300 rounded-lg"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              disabled={isLoading}
-            />
-          </div>
-          <div className="mb-6">
-            <label htmlFor="password" className="block text-gray-700">Password</label>
-            <input
-              type="password"
-              id="password"
-              className="w-full p-2 border border-gray-300 rounded-lg"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={isLoading}
-            />
-          </div>
-          <button 
-            type="submit" 
-            className={`w-full text-white py-2 rounded-lg ${
-              isLoading 
-                ? 'bg-gray-400 cursor-not-allowed' 
-                : 'bg-[#4A63A3] hover:bg-[#42868F]'
-            }`}
+        <div className="mb-3">
+          <label className="block font-medium">Username</label>
+          <input
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            required
             disabled={isLoading}
-          >
-            {isLoading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
-      </div>
+            className="w-full p-2 border rounded"
+          />
+        </div>
+
+        <div className="mb-3">
+          <label className="block font-medium">Password</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            disabled={isLoading}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+
+        <button 
+          type="submit"
+          disabled={isLoading}
+          className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+        >
+          {isLoading ? 'Logging in...' : 'Login'}
+        </button>
+      </form>
     </div>
   );
 }

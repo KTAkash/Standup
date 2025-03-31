@@ -7,6 +7,7 @@ import com.example.Standup.Service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -19,6 +20,8 @@ public class AuthController {
 
     private final UserService userService;
     private final JwtUtil jwtUtil;
+    private final PasswordEncoder passwordEncoder; // Inject PasswordEncoder
+
 
     @PostMapping("/create-admin")
     public ResponseEntity<?> createAdmin(@RequestBody User adminUser) {
@@ -50,23 +53,30 @@ public class AuthController {
         try {
             User authenticatedUser = userService.getUserByUsername(loginUser.getUsername());
 
-            if (authenticatedUser != null &&
-                    userService.validateCredentials(loginUser.getUsername(), loginUser.getPassword())) {
-
-                String token = jwtUtil.generateToken(
-                        authenticatedUser.getUsername(),
-                        authenticatedUser.getRole().name()
-                );
-
-                return ResponseEntity.ok(Map.of(
-                        "message", "Login successful",
-                        "token", token,
-                        "role", authenticatedUser.getRole().name()
-                ));
+            if (authenticatedUser == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Invalid credentials"));
             }
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+
+            if (!passwordEncoder.matches(loginUser.getPassword(), authenticatedUser.getPassword())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("message", "Invalid credentials"));
+            }
+
+            String token = jwtUtil.generateToken(
+                    authenticatedUser.getUsername(),
+                    authenticatedUser.getRole().name()
+            );
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Login successful",
+                    "token", token,
+                    "role", authenticatedUser.getRole().name(),
+                    "username", authenticatedUser.getUsername()
+            ));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Login failed");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Login failed: " + e.getMessage()));
         }
     }
 

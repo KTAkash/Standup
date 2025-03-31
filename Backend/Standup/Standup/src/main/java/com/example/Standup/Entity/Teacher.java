@@ -23,4 +23,10 @@ public class Teacher extends User {
     @CollectionTable(name = "teacher_modules", joinColumns = @JoinColumn(name = "teacher_id"))
     @Column(name = "module")
     private List<String> modules;
+
+    @Column(name = "name")
+    private String name;
+
+    @Column(name = "active")
+    private Boolean active = true;
 }

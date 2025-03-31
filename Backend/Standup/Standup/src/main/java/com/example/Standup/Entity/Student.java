@@ -25,6 +25,14 @@ public class Student extends User {
     @Column(name = "module")
     private List<String> modules;
 
+    @Column(name = "name")
+    private String name;
+
     @Column(name = "enrollment_number", unique = true)
     private String enrollmentNumber;
+
+    @Column(name = "active")
+    private Boolean active = true;
+
+
 }

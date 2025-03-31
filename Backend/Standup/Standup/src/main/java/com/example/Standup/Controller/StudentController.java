@@ -11,6 +11,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/su")
+@CrossOrigin(origins = "*")
+
 @RequiredArgsConstructor
 public class StudentController {
 
@@ -25,9 +27,24 @@ public class StudentController {
 
     // Update student
     @PutMapping("/update-student/{studentId}")
-    public ResponseEntity<String> updateStudent(@PathVariable Long studentId, @RequestBody Student student) {
-        studentService.updateStudent(studentId, student);
-        return ResponseEntity.ok("Student updated successfully");
+    public ResponseEntity<?> updateStudent(
+            @PathVariable Long studentId,
+            @RequestBody Student updatedStudent) {
+        try {
+            Student existingStudent = studentService.getStudentById(studentId);
+            if (existingStudent == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Student not found");
+            }
+
+            // Ensure username is preserved
+            updatedStudent.setUsername(existingStudent.getUsername());
+
+            Student savedStudent = studentService.updateStudent(studentId, updatedStudent);
+            return ResponseEntity.ok(savedStudent);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error updating student: " + e.getMessage());
+        }
     }
 
     // Delete student

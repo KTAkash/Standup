@@ -1,49 +1,94 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function CreateStudent() {
   const [formData, setFormData] = useState({
     name: "",
+    enrollmentNumber: "",
+
     username: "",
     password: "",
     modules: "",
   });
-
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Student Created:", formData);
-    navigate("/manage-students"); // Redirect after submission
+    setIsLoading(true);
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      // Convert modules string to array
+      const modulesArray = formData.modules
+        .split(",")
+        .map(module => module.trim())
+        .filter(module => module.length > 0);
+
+      const response = await fetch("http://localhost:8000/su/student", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          ...formData,
+          modules: modulesArray,
+          role: "STUDENT" // Set default role
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to create student");
+      }
+
+      toast.success("Student created successfully!");
+      navigate("/manage-students");
+    } catch (error) {
+      console.error("Error creating student:", error);
+      toast.error(error.message || "Failed to create student");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Navigate to Manage Students
   const goToManageStudents = () => {
     navigate("/manage-students");
   };
 
-  // Logout function
   const handleLogout = () => {
-    navigate("/login"); // Redirect to login page
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    navigate("/login");
   };
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      {/* Header (Same as ManageStudents) */}
       <header className="flex justify-between items-center bg-[#4A63A3] text-white p-4 rounded-lg shadow-md">
         <h1 className="text-2xl font-bold">Create Student</h1>
         <div className="flex space-x-4">
-          <button onClick={goToManageStudents} className="bg-white text-[#4A63A3] px-4 py-2 rounded-lg font-semibold hover:bg-gray-200">
+          <button 
+            onClick={goToManageStudents} 
+            className="bg-white text-[#4A63A3] px-4 py-2 rounded-lg font-semibold hover:bg-gray-200"
+          >
             Home
           </button>
-          <button onClick={handleLogout} className="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600">
+          <button 
+            onClick={handleLogout} 
+            className="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600"
+          >
             Logout
           </button>
         </div>
       </header>
 
-      {/* Student Creation Form */}
       <div className="mt-6 bg-white p-6 rounded-lg shadow-md w-96 mx-auto">
         <h2 className="text-2xl font-bold mb-4 text-center">Create Student</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -52,6 +97,14 @@ export default function CreateStudent() {
             placeholder="Student Name"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            className="w-full px-4 py-2 border rounded-lg"
+            required
+          />
+          <input
+            type="number"
+            placeholder="Enrollment Number"
+            value={formData.enrollmentNumber}
+            onChange={(e) => setFormData({ ...formData, enrollmentNumber: e.target.value })}
             className="w-full px-4 py-2 border rounded-lg"
             required
           />
@@ -79,8 +132,14 @@ export default function CreateStudent() {
             className="w-full px-4 py-2 border rounded-lg"
             required
           />
-          <button type="submit" className="w-full bg-[#4A63A3] text-white py-2 rounded-lg hover:bg-[#3b4f85]">
-            Create Student
+          <button 
+            type="submit" 
+            disabled={isLoading}
+            className={`w-full bg-[#4A63A3] text-white py-2 rounded-lg hover:bg-[#3b4f85] ${
+              isLoading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+          >
+            {isLoading ? "Creating..." : "Create Student"}
           </button>
         </form>
       </div>
