@@ -1,15 +1,10 @@
 package com.example.Standup.Entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
-import java.util.List;
-
+import java.util.Set;
 
 @Entity
 @DiscriminatorValue("STUDENT")
@@ -20,19 +15,23 @@ import java.util.List;
 @AllArgsConstructor
 @SuperBuilder
 public class Student extends User {
-    @ElementCollection
+
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "student_modules", joinColumns = @JoinColumn(name = "student_id"))
     @Column(name = "module")
-    private List<String> modules;
+    private Set<String> modules;  // Changed from List to Set for uniqueness
 
-    @Column(name = "name")
+    @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "enrollment_number", unique = true)
+    @Column(name = "enrollment_number", unique = true, nullable = false)
     private String enrollmentNumber;
 
-    @Column(name = "active")
+    @Column(name = "active", nullable = false)
+    @Builder.Default
     private Boolean active = true;
 
+    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Assignment> assignments;  // Assuming Student has Assignments
 
 }

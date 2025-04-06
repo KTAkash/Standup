@@ -1,22 +1,49 @@
 package com.example.Standup.Controller;
 
+import com.example.Standup.Entity.Assignment;
 import com.example.Standup.Entity.Student;
 import com.example.Standup.Service.StudentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/su")
 @CrossOrigin(origins = "*")
-
 @RequiredArgsConstructor
 public class StudentController {
 
     private final StudentService studentService;
+    private final PasswordEncoder passwordEncoder;
+
+    @GetMapping("/student-dashboard")
+    public ResponseEntity<?> getStudentDashboard(Authentication authentication) {
+        try {
+            if (authentication == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed");
+            }
+
+            String username = authentication.getName();
+            System.out.println("Fetching dashboard for user: " + username);
+
+            Student student = studentService.getStudentByUsername(username);
+            if (student == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Student not found");
+            }
+
+            List<Assignment> assignments = studentService.getAssignmentsByStudent(student.getId());
+
+            return ResponseEntity.ok(new StudentDashboardResponse(student, assignments));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error fetching dashboard: " + e.getMessage());
+        }
+    }
 
     // Create a student
     @PostMapping("/student")
@@ -27,16 +54,13 @@ public class StudentController {
 
     // Update student
     @PutMapping("/update-student/{studentId}")
-    public ResponseEntity<?> updateStudent(
-            @PathVariable Long studentId,
-            @RequestBody Student updatedStudent) {
+    public ResponseEntity<?> updateStudent(@PathVariable Long studentId, @RequestBody Student updatedStudent) {
         try {
             Student existingStudent = studentService.getStudentById(studentId);
             if (existingStudent == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Student not found");
             }
 
-            // Ensure username is preserved
             updatedStudent.setUsername(existingStudent.getUsername());
 
             Student savedStudent = studentService.updateStudent(studentId, updatedStudent);
@@ -47,16 +71,9 @@ public class StudentController {
         }
     }
 
-    // Delete student
-    @DeleteMapping("/delete-student/{studentId}")
-    public ResponseEntity<String> deleteStudent(@PathVariable Long studentId) {
-        studentService.deleteStudent(studentId);
-        return ResponseEntity.ok("Student deleted successfully");
-    }
-
     // Get all students
     @GetMapping("/students")
-    public ResponseEntity<List<Student>> getAllStudents() {
+    public  ResponseEntity<List<Student>> getAllStudents() {
         return ResponseEntity.ok(studentService.getAllStudents());
     }
 
@@ -68,5 +85,16 @@ public class StudentController {
             return ResponseEntity.ok(student);
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+    }
+
+    // DTO class for student dashboard response
+    static class StudentDashboardResponse {
+        public Student student;
+        public List<Assignment> assignments;
+
+        public StudentDashboardResponse(Student student, List<Assignment> assignments) {
+            this.student = student;
+            this.assignments = assignments;
+        }
     }
 }

@@ -1,31 +1,31 @@
 package com.example.Standup.Service;
 
+import com.example.Standup.Entity.Assignment;
 import com.example.Standup.Entity.Student;
 import com.example.Standup.Enum.Role;
+import com.example.Standup.Repository.AssignmentRepository;
 import com.example.Standup.Repository.StudentRepository;
 import com.example.Standup.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.List; // Import List
+import java.util.Optional; // Import Optional
 
 @Service
 @RequiredArgsConstructor
 public class StudentService {
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
+    private final AssignmentRepository assignmentRepository; // Mark as final for constructor injection
     private final PasswordEncoder passwordEncoder; // Inject PasswordEncoder
-
 
     public Student createStudent(Student student) {
         student.setRole(Role.STUDENT); // Ensure role is assigned
-
         student.setPassword(passwordEncoder.encode(student.getPassword()));
-
         return studentRepository.save(student);
     }
-
 
     public Student updateStudent(Long studentId, Student updatedStudent) {
         Student existingStudent = studentRepository.findById(studentId)
@@ -56,10 +56,21 @@ public class StudentService {
     }
 
     public List<Student> getAllStudents() {
-        return studentRepository.findAll(); // Or use findAllStudents() from UserRepository
+        return studentRepository.findAll();
     }
 
     public Student getStudentById(Long studentId) {
         return studentRepository.findById(studentId).orElse(null);
+    }
+
+    public Student getStudentByUsername(String username) {
+        return studentRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+    }
+
+    public List<Assignment> getAssignmentsByStudent(Long studentId) {
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+        return assignmentRepository.findByStudent(student);
     }
 }
