@@ -137,6 +137,21 @@ export default function ManageStudents() {
     }
   };
 
+  // Helper function to display module names
+  const displayModules = (modules) => {
+    if (!modules || modules.length === 0) {
+      return <span className="text-gray-400">No modules assigned</span>;
+    }
+    
+    // Check if modules are strings or objects
+    if (typeof modules[0] === 'string') {
+      return modules.join(", ");
+    }
+    
+    // Handle module objects
+    return modules.map(module => module.moduleName || module.name || "Unknown Module").join(", ");
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -241,9 +256,7 @@ export default function ManageStudents() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-gray-700">
-                          {student.modules?.length > 0 
-                            ? student.modules.join(", ") 
-                            : <span className="text-gray-400">No modules assigned</span>}
+                          {displayModules(student.modules)}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">

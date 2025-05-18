@@ -1,9 +1,11 @@
 package com.example.StandUp.Service;
+import com.example.StandUp.Entity.Module;
 
 import com.example.StandUp.Entity.Assignment;
 import com.example.StandUp.Entity.Student;
 import com.example.StandUp.Enum.Role;
 import com.example.StandUp.Repository.AssignmentRepository;
+import com.example.StandUp.Repository.ModuleRepository;
 import com.example.StandUp.Repository.StudentRepository;
 import com.example.StandUp.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -11,12 +13,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 public class StudentService {
+
+    private final ModuleRepository moduleRepository;
 
     private final StudentRepository studentRepository;
     private final UserRepository userRepository;
@@ -25,6 +28,12 @@ public class StudentService {
     @Autowired  // Make sure this annotation is present
     private AssignmentRepository assignmentRepository;
 
+    public Set<Module> getModulesByIds(Set<Long> moduleIds) {
+        if (moduleIds == null || moduleIds.isEmpty()) {
+            return Collections.emptySet();
+        }
+        return new HashSet<>(moduleRepository.findAllById(moduleIds));
+    }
 
 
     public Student createStudent(Student student) {
@@ -34,7 +43,6 @@ public class StudentService {
 
         return studentRepository.save(student);
     }
-
 
     public Student updateStudent(Long studentId, Student updatedStudent) {
         Student existingStudent = studentRepository.findById(studentId)
@@ -59,6 +67,9 @@ public class StudentService {
 
         return studentRepository.save(existingStudent);
     }
+
+
+
 
     public void deleteStudent(Long studentId) {
         studentRepository.deleteById(studentId);

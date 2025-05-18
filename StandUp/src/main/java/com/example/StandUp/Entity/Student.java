@@ -1,9 +1,11 @@
 package com.example.StandUp.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -16,10 +18,14 @@ import java.util.Set;
 @SuperBuilder
 public class Student extends User {
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "student_modules", joinColumns = @JoinColumn(name = "student_id"))
-    @Column(name = "modules")
-    private Set<String> modules;  // Changed from List to Set for uniqueness
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "student_modules",
+            joinColumns = @JoinColumn(name = "student_id"),
+            inverseJoinColumns = @JoinColumn(name = "module_id")
+    )
+    @JsonIgnoreProperties("students") // Prevent recursive reference
+    private Set<Module> modules = new HashSet<>();
 
     @Column(name = "name", nullable = false)
     private String name;
@@ -32,5 +38,5 @@ public class Student extends User {
     private Boolean active = true;
 
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Assignment> assignments;  // Correct Assignment entity reference
+    private Set<Assignment> assignments;
 }

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -11,14 +12,15 @@ export default function EditStudent() {
     username: "",
     password: "",
     enrollmentNumber: "",
-    modules: "",
+    modules: [], // Changed from string to array
     active: true
   });
+  const [availableModules, setAvailableModules] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch student data when component mounts
+  // Fetch student data and available modules
   useEffect(() => {
-    const fetchStudent = async () => {
+    const fetchData = async () => {
       const token = localStorage.getItem("token");
       if (!token) {
         navigate("/login");
@@ -26,36 +28,73 @@ export default function EditStudent() {
       }
 
       try {
-        const response = await fetch(`http://localhost:8000/su/student/${studentId}`, {
-          method: "GET",
+        setIsLoading(true);
+        
+        // Fetch available modules
+        const modulesResponse = await fetch("http://localhost:8000/su/modules", {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        });
+        
+        if (!modulesResponse.ok) throw new Error("Failed to fetch modules");
+        const modulesData = await modulesResponse.json();
+        setAvailableModules(modulesData);
+
+        // Fetch student data
+        const studentResponse = await fetch(`http://localhost:8000/su/student/${studentId}`, {
           headers: {
             "Authorization": `Bearer ${token}`,
             "Content-Type": "application/json"
           }
         });
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch student data");
-        }
+        if (!studentResponse.ok) throw new Error("Failed to fetch student data");
+        const student = await studentResponse.json();
 
-        const student = await response.json();
+        // Extract module names from student data
+        const studentModuleNames = student.modules?.map(mod => 
+          mod.moduleName || mod.name || mod
+        ) || [];
+
         setFormData({
           name: student.name || "",
           username: student.username || "",
-          password: "", // Password is intentionally left blank
+          password: "",
           enrollmentNumber: student.enrollmentNumber || "",
-          modules: student.modules?.join(", ") || "",
-          active: student.active || true
+          modules: studentModuleNames,
+          active: student.active !== false // default to true if not specified
         });
+
       } catch (error) {
-        console.error("Error fetching student:", error);
+        console.error("Error fetching data:", error);
         toast.error(error.message);
         navigate("/manage-students");
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchStudent();
+    fetchData();
   }, [studentId, navigate]);
+
+  // Handle module selection/deselection
+  const handleModuleChange = (e) => {
+    const moduleName = e.target.value;
+    setFormData(prev => {
+      if (e.target.checked) {
+        // Add module to list
+        return { ...prev, modules: [...prev.modules, moduleName] };
+      } else {
+        // Remove module from list
+        return {
+          ...prev,
+          modules: prev.modules.filter(mod => mod !== moduleName)
+        };
+      }
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -66,19 +105,23 @@ export default function EditStudent() {
       if (!token) {
         throw new Error("No authentication token found");
       }
-  
-      // Prepare complete update data
+
+      // Convert selected module names to IDs
+      const moduleIds = availableModules
+        .filter(mod => formData.modules.includes(mod.moduleName || mod.name))
+        .map(mod => mod.id);
+
       const updateData = {
         name: formData.name,
         enrollmentNumber: formData.enrollmentNumber,
         active: formData.active,
-        modules: formData.modules
-          .split(",")
-          .map(module => module.trim())
-          .filter(module => module.length > 0),
-        password: formData.password || null // Send null if password is empty
+        moduleIds: moduleIds
       };
-  
+
+      if (formData.password) {
+        updateData.password = formData.password;
+      }
+
       const response = await fetch(`http://localhost:8000/su/update-student/${studentId}`, {
         method: "PUT",
         headers: {
@@ -87,13 +130,13 @@ export default function EditStudent() {
         },
         body: JSON.stringify(updateData)
       });
-  
+
       const responseData = await response.json();
       
       if (!response.ok) {
         throw new Error(responseData.message || "Failed to update student");
       }
-  
+
       toast.success("Student updated successfully!");
       navigate("/manage-students");
     } catch (error) {
@@ -215,20 +258,35 @@ export default function EditStudent() {
                 />
               </div>
 
+              {/* Updated Modules Selection */}
               <div>
-                <label htmlFor="modules" className="block text-sm font-medium text-gray-700 mb-1">
-                  Modules (comma separated)
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Assign Modules
                 </label>
-                <input
-                  id="modules"
-                  type="text"
-                  name="modules"
-                  value={formData.modules}
-                  onChange={handleChange}
-                  placeholder="Math, Science, History"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                  required
-                />
+                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border p-2 rounded-lg">
+                  {availableModules.length === 0 ? (
+                    <p className="text-gray-500">No modules available</p>
+                  ) : (
+                    availableModules.map((mod) => {
+                      const moduleLabel = mod.moduleName || mod.name || "Unknown Module";
+                      return (
+                        <label
+                          key={mod.id}
+                          className="inline-flex items-center cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            value={moduleLabel}
+                            checked={formData.modules.includes(moduleLabel)}
+                            onChange={handleModuleChange}
+                            className="mr-2"
+                          />
+                          {moduleLabel}
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center">

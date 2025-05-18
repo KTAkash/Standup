@@ -1,5 +1,7 @@
 package com.example.StandUp.Controller;
+import com.example.StandUp.Entity.Module;
 
+import com.example.StandUp.DTO.StudentDTO;
 import com.example.StandUp.Entity.Assignment;
 import com.example.StandUp.Entity.Student;
 import com.example.StandUp.Service.StudentService;
@@ -11,6 +13,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/su")
@@ -47,30 +50,67 @@ public class StudentController {
 
     // Create a student
     @PostMapping("/student")
-    public ResponseEntity<String> createStudent(@RequestBody Student student) {
-        studentService.createStudent(student);
-        return ResponseEntity.ok("Student created successfully");
+    public ResponseEntity<?> createStudent(@RequestBody StudentDTO studentDTO) {
+        try {
+            // Fetch Module entities by IDs
+            Set<Module> modules = studentService.getModulesByIds(studentDTO.getModuleIds());
+
+            Student student = Student.builder()
+                    .name(studentDTO.getName())
+                    .username(studentDTO.getUsername())
+                    .password(passwordEncoder.encode(studentDTO.getPassword()))
+                    .enrollmentNumber(studentDTO.getEnrollmentNumber())
+                    .modules(modules)
+                    .active(studentDTO.getActive() != null ? studentDTO.getActive() : true)
+                    .build();
+
+            Student createdStudent = studentService.createStudent(student);
+            return ResponseEntity.ok(createdStudent);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Error creating student: " + e.getMessage());
+        }
     }
 
     // Update student
     @PutMapping("/update-student/{studentId}")
-    public ResponseEntity<?> updateStudent(@PathVariable Long studentId, @RequestBody Student updatedStudent) {
+    public ResponseEntity<?> updateStudent(
+            @PathVariable Long studentId,
+            @RequestBody StudentDTO updatedStudentDTO) {
         try {
             Student existingStudent = studentService.getStudentById(studentId);
             if (existingStudent == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Student not found");
             }
 
-            updatedStudent.setUsername(existingStudent.getUsername());
+            if (updatedStudentDTO.getName() != null) {
+                existingStudent.setName(updatedStudentDTO.getName());
+            }
 
-            Student savedStudent = studentService.updateStudent(studentId, updatedStudent);
+            if (updatedStudentDTO.getEnrollmentNumber() != null) {
+                existingStudent.setEnrollmentNumber(updatedStudentDTO.getEnrollmentNumber());
+            }
+
+            if (updatedStudentDTO.getModuleIds() != null) {
+                Set<Module> modules = studentService.getModulesByIds(updatedStudentDTO.getModuleIds());
+                existingStudent.setModules(modules);
+            }
+
+            if (updatedStudentDTO.getActive() != null) {
+                existingStudent.setActive(updatedStudentDTO.getActive());
+            }
+
+            if (updatedStudentDTO.getPassword() != null && !updatedStudentDTO.getPassword().isEmpty()) {
+                existingStudent.setPassword(passwordEncoder.encode(updatedStudentDTO.getPassword()));
+            }
+
+            Student savedStudent = studentService.updateStudent(studentId,existingStudent);
             return ResponseEntity.ok(savedStudent);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body("Error updating student: " + e.getMessage());
         }
     }
-
     // Get all students
     @GetMapping("/students")
     public ResponseEntity<List<Student>> getAllStudents() {

@@ -96,8 +96,8 @@ public class TeacherService {
         return feedbackRepository.save(feedback);
     }
 
-    public List<Student> getStudentsByModules(String module) {
-        return studentRepository.findByModulesContaining(module);
+    public List<Student> getStudentsByModules(String moduleName) {
+        return studentRepository.findByModuleName(moduleName);
     }
 
 
