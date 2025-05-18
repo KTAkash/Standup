@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import { useEffect, useState } from "react";
+=======
+import { useState, useEffect } from "react";
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -14,6 +18,7 @@ export default function CreateTeacher() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+<<<<<<< HEAD
   // Fetch modules from backend when component mounts
   useEffect(() => {
     const fetchModules = async () => {
@@ -29,6 +34,18 @@ export default function CreateTeacher() {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
+=======
+  // Fetch modules on mount
+  useEffect(() => {
+    const fetchModules = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("Authentication token missing");
+
+        const response = await fetch("http://localhost:8000/su/modules", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
           },
         });
 
@@ -39,11 +56,17 @@ export default function CreateTeacher() {
         const data = await response.json();
         setAvailableModules(data);
       } catch (error) {
+<<<<<<< HEAD
         toast.error(error.message || "Could not load modules");
+=======
+        console.error("Error fetching modules:", error);
+        toast.error("Failed to load modules");
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
       }
     };
 
     fetchModules();
+<<<<<<< HEAD
   }, [navigate]);
 
   // Handle selection/deselection of modules (checkbox)
@@ -130,6 +153,91 @@ const handleSubmit = async (e) => {
     localStorage.removeItem("role");
     toast.info("Logged out successfully");
     navigate("/login");
+=======
+  }, []);
+
+  const validateForm = () => {
+    if (!formData.name.trim()) {
+      toast.error("Full Name is required");
+      return false;
+    }
+    if (!formData.username.trim()) {
+      toast.error("Username is required");
+      return false;
+    }
+    if (!formData.password.trim()) {
+      toast.error("Password is required");
+      return false;
+    }
+    if (formData.modules.length === 0) {
+      toast.error("Please select at least one module");
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("No authentication token found");
+
+      // Send only username, password, and role here — exclude name and modules for now
+      const response = await fetch("http://localhost:8000/su/teacher", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name : formData.name,
+          username: formData.username,
+          password: formData.password,
+          modules: formData.modules,
+          
+        }),
+      });
+
+      if (!response.ok) {
+        let errorMessage = "Failed to create teacher";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          // empty or invalid JSON
+        }
+        throw new Error(errorMessage);
+      }
+
+      toast.success("Teacher created successfully!");
+      navigate("/manage-teacher");
+
+      // Optional: after successful creation, you can add separate logic to assign modules to this teacher
+      // This requires backend support — maybe an API like POST /su/assign-modules?teacherId=...&modules=[...]
+
+    } catch (error) {
+      console.error("Error creating teacher:", error);
+      toast.error(error.message || "Failed to create teacher");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const goToManageTeachers = () => {
+    navigate("/manage-teacher");
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    navigate("/login");
+    toast.info("Logged out successfully");
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
   };
 
   return (
@@ -157,6 +265,23 @@ const handleSubmit = async (e) => {
       <main className="container mx-auto p-6">
         <div className="max-w-md mx-auto bg-white border border-gray-200 rounded-xl shadow-sm p-8">
           <div className="text-center mb-8">
+<<<<<<< HEAD
+=======
+            <svg
+              className="w-16 h-16 text-blue-800 mx-auto mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+              ></path>
+            </svg>
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
             <h2 className="text-2xl font-bold text-blue-800">Create New Teacher</h2>
             <p className="text-gray-600 mt-2">
               Fill in the details below to register a new teacher
@@ -164,6 +289,7 @@ const handleSubmit = async (e) => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+<<<<<<< HEAD
             {/* Full Name */}
             <div>
               <label className="block text-gray-700 font-medium mb-2">Full Name</label>
@@ -173,10 +299,26 @@ const handleSubmit = async (e) => {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+=======
+            <div>
+              <label className="block text-gray-700 font-medium mb-2" htmlFor="name">
+                Full Name
+              </label>
+              <input
+                id="name"
+                type="text"
+                placeholder="Enter teacher's full name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
                 required
               />
             </div>
 
+<<<<<<< HEAD
             {/* Username */}
             <div>
               <label className="block text-gray-700 font-medium mb-2">Username</label>
@@ -186,10 +328,26 @@ const handleSubmit = async (e) => {
                 value={formData.username}
                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+=======
+            <div>
+              <label className="block text-gray-700 font-medium mb-2" htmlFor="username">
+                Username
+              </label>
+              <input
+                id="username"
+                type="text"
+                placeholder="Enter username"
+                value={formData.username}
+                onChange={(e) =>
+                  setFormData({ ...formData, username: e.target.value })
+                }
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
                 required
               />
             </div>
 
+<<<<<<< HEAD
             {/* Password */}
             <div>
               <label className="block text-gray-700 font-medium mb-2">Password</label>
@@ -199,10 +357,26 @@ const handleSubmit = async (e) => {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+=======
+            <div>
+              <label className="block text-gray-700 font-medium mb-2" htmlFor="password">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                placeholder="Enter password"
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
                 required
               />
             </div>
 
+<<<<<<< HEAD
             {/* Modules selection */}
             <div>
               <label className="block text-gray-700 font-medium mb-2">Assign Modules</label>
@@ -234,6 +408,44 @@ const handleSubmit = async (e) => {
             </div>
 
             {/* Submit button */}
+=======
+            <div>
+              <label
+                className="block text-gray-700 font-medium mb-2"
+                htmlFor="modules"
+              >
+                Assign Modules
+              </label>
+              <select
+                id="modules"
+                multiple
+                value={formData.modules}
+                onChange={(e) => {
+                  const selected = Array.from(
+                    e.target.selectedOptions,
+                    (option) => parseInt(option.value)
+                  );
+                  setFormData({ ...formData, modules: selected });
+                }}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                required
+                aria-describedby="modulesHelp"
+              >
+                {availableModules.map((mod) => (
+                  <option key={mod.id} value={mod.id}>
+                    {mod.moduleName}
+                  </option>
+                ))}
+              </select>
+              <p
+                id="modulesHelp"
+                className="text-sm text-gray-500 mt-1"
+              >
+                Hold Ctrl (Windows) or Cmd (Mac) to select multiple modules
+              </p>
+            </div>
+
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
             <button
               type="submit"
               disabled={isLoading}
@@ -260,7 +472,11 @@ const handleSubmit = async (e) => {
                     <path
                       className="opacity-75"
                       fill="currentColor"
+<<<<<<< HEAD
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+=======
+                      d="M4 12a8 8 0 018-8v8H4z"
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
                     ></path>
                   </svg>
                   Creating...

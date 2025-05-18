@@ -16,30 +16,51 @@ export default function ManageTeachers() {
       return;
     }
 
+<<<<<<< HEAD
+=======
+    setIsLoading(true);
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
     try {
       const response = await fetch("http://localhost:8000/su/teachers", {
         method: "GET",
         headers: {
+<<<<<<< HEAD
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json"
         },
         credentials: "include"
+=======
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
       });
 
       if (!response.ok) {
         if (response.status === 401 || response.status === 403) {
           throw new Error("Session expired. Please login again.");
         }
+<<<<<<< HEAD
         throw new Error(`Failed to fetch teachers: ${response.status}`);
+=======
+        throw new Error("Failed to fetch teachers");
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
       }
 
       const data = await response.json();
       setTeachers(data);
       setError(null);
+<<<<<<< HEAD
     } catch (error) {
       console.error("Error fetching teachers:", error);
       setError(error.message);
       toast.error(error.message);
+=======
+    } catch (err) {
+      console.error("Error fetching teachers:", err);
+      setError(err.message);
+      toast.error(err.message);
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
     } finally {
       setIsLoading(false);
     }
@@ -47,12 +68,22 @@ export default function ManageTeachers() {
 
   const toggleStatus = async (teacherId) => {
     const token = localStorage.getItem("token");
+<<<<<<< HEAD
     const teacher = teachers.find(t => t.id === teacherId);
+=======
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    const teacher = teachers.find((t) => t.id === teacherId);
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
     if (!teacher) return;
 
     const updatedTeacher = { ...teacher, active: !teacher.active };
 
     try {
+<<<<<<< HEAD
       const response = await fetch(`http://localhost:8000/su/update-teacher/${teacherId}`, {
         method: "PUT",
         headers: {
@@ -97,6 +128,64 @@ export default function ManageTeachers() {
     } catch (error) {
       console.error("Error deleting teacher:", error);
       toast.error(error.message);
+=======
+      const response = await fetch(
+        `http://localhost:8000/su/update-teacher/${teacherId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: updatedTeacher.name,
+            active: updatedTeacher.active,
+            modules: updatedTeacher.modules,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to update teacher");
+      }
+
+      setTeachers((prev) =>
+        prev.map((t) => (t.id === teacherId ? updatedTeacher : t))
+      );
+      toast.success("Teacher status updated successfully!");
+    } catch (err) {
+      console.error("Error updating teacher:", err);
+      toast.error(err.message);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this teacher?")) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8000/su/delete-teacher/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete teacher");
+      }
+
+      toast.success("Teacher deleted successfully!");
+      setTeachers((prev) => prev.filter((t) => t.id !== id));
+    } catch (err) {
+      console.error("Error deleting teacher:", err);
+      toast.error(err.message);
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
     }
   };
 
@@ -126,14 +215,24 @@ export default function ManageTeachers() {
       <div className="min-h-screen bg-white flex flex-col items-center justify-center">
         <div className="text-2xl font-semibold text-red-600 mb-4">{error}</div>
         <div className="flex space-x-4">
+<<<<<<< HEAD
           <button 
             onClick={fetchTeachers} 
+=======
+          <button
+            onClick={fetchTeachers}
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
             className="bg-blue-800 text-white px-6 py-3 rounded-lg hover:bg-blue-900 transition-colors font-medium"
           >
             Try Again
           </button>
+<<<<<<< HEAD
           <button 
             onClick={handleLogout} 
+=======
+          <button
+            onClick={handleLogout}
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
             className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors font-medium"
           >
             Logout
@@ -145,19 +244,33 @@ export default function ManageTeachers() {
 
   return (
     <div className="min-h-screen bg-white">
+<<<<<<< HEAD
       {/* Dark Blue Header */}
+=======
+      {/* Header */}
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
       <header className="bg-[#1E3A8A] text-white p-4 shadow-lg">
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold">Manage Teachers</h1>
           <div className="flex space-x-4">
+<<<<<<< HEAD
             <Link 
               to="/create-teacher" 
+=======
+            <Link
+              to="/create-teacher"
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
               className="bg-white text-blue-800 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors shadow-md"
             >
               + Create Teacher
             </Link>
+<<<<<<< HEAD
             <button 
               onClick={handleLogout} 
+=======
+            <button
+              onClick={handleLogout}
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
               className="bg-red-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-red-700 transition-colors shadow-md"
             >
               Logout
@@ -170,6 +283,7 @@ export default function ManageTeachers() {
       <main className="container mx-auto p-6">
         {teachers.length === 0 ? (
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-8 text-center max-w-2xl mx-auto">
+<<<<<<< HEAD
             <svg 
               className="w-16 h-16 text-gray-400 mx-auto mb-4" 
               fill="none" 
@@ -183,6 +297,26 @@ export default function ManageTeachers() {
             <p className="text-gray-500 mb-6">Get started by creating a new teacher profile</p>
             <Link 
               to="/create-teacher" 
+=======
+            <svg
+              className="w-16 h-16 text-gray-400 mx-auto mb-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+              ></path>
+            </svg>
+            <h2 className="text-xl font-semibold text-gray-700 mb-2">No Teachers Found</h2>
+            <p className="text-gray-500 mb-6">Get started by creating a new teacher profile</p>
+            <Link
+              to="/create-teacher"
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
               className="inline-block bg-blue-800 text-white px-6 py-3 rounded-lg hover:bg-blue-900 transition-colors font-medium shadow-md"
             >
               Create New Teacher
@@ -205,6 +339,7 @@ export default function ManageTeachers() {
                   {teachers.map((teacher) => (
                     <tr key={teacher.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
+<<<<<<< HEAD
                         <div className="font-medium text-gray-900">{teacher.name || teacher.username}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-gray-700">{teacher.username}</td>
@@ -227,20 +362,51 @@ export default function ManageTeachers() {
                               ? "bg-green-100 text-green-800 hover:bg-green-200" 
                               : "bg-red-100 text-red-800 hover:bg-red-200"
                           }`}
+=======
+                        <div className="font-medium text-gray-900">
+                          {teacher.name || teacher.username}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-gray-700">{teacher.username}</td>
+                      <td className="px-6 py-4 text-gray-700">
+                        {teacher.modules && teacher.modules.length > 0
+                          ? teacher.modules.map((m) => m.module?.moduleName).join(", ")
+                          : "No modules assigned"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <span
+                          onClick={() => toggleStatus(teacher.id)}
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors ${
+                            teacher.active
+                              ? "bg-green-100 text-green-800 hover:bg-green-200"
+                              : "bg-red-100 text-red-800 hover:bg-red-200"
+                          }`}
+                          title="Toggle Active Status"
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
                         >
                           {teacher.active ? "Active" : "Inactive"}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <div className="flex justify-center space-x-2">
+<<<<<<< HEAD
                           <Link 
                             to={`/edit-teacher/${teacher.id}`} 
+=======
+                          <Link
+                            to={`/edit-teacher/${teacher.id}`}
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
                             className="inline-flex items-center px-4 py-2 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition-colors font-medium"
                           >
                             Edit
                           </Link>
+<<<<<<< HEAD
                           <button 
                             onClick={() => deleteTeacher(teacher.id)} 
+=======
+                          <button
+                            onClick={() => handleDelete(teacher.id)}
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
                             className="inline-flex items-center px-4 py-2 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 transition-colors font-medium"
                           >
                             Delete
@@ -257,4 +423,8 @@ export default function ManageTeachers() {
       </main>
     </div>
   );
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 6c5e8d2cc16a8dc4ce0833feb358f8c5b9fb57c8
