@@ -21,10 +21,10 @@ public class Module {
     private String moduleName;
 
     @OneToMany(mappedBy = "module", cascade = CascadeType.ALL)
-    @JsonManagedReference  // Prevent infinite recursion on serialization
+    // Prevent infinite recursion on serialization
     private List<Topic> topics;
 
     @OneToMany(mappedBy = "module", cascade = CascadeType.ALL)
-    @JsonManagedReference
+
     private List<Assignment> assignments;
 }

@@ -64,51 +64,36 @@ export default function CreateStudent() {
     });
   };
 
-  const handleSubmit = async (e) => {
+ const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
+        const response = await fetch("http://localhost:8000/su/student", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("token")}`
+            },
+            body: JSON.stringify({
+                username: formData.username,
+                password: formData.password, // Will be encoded by backend
+                name: formData.name,
+                enrollmentNumber: formData.enrollmentNumber,
+                moduleIds: formData.moduleIds,
+                active: true
+            }),
+        });
 
-      // Convert selected module names to IDs
-      const moduleIds = availableModules
-        .filter(mod => formData.modules.includes(mod.moduleName || mod.name))
-        .map(mod => mod.id);
-
-      const response = await fetch("http://localhost:8000/su/student", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          enrollmentNumber: formData.enrollmentNumber,
-          username: formData.username,
-          password: formData.password,
-          moduleIds: moduleIds,
-          role: "STUDENT"
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to create student");
-      }
-
-      toast.success("Student created successfully!");
-      navigate("/manage-students");
+        if (!response.ok) throw new Error("Failed to create student");
+        toast.success("Student created successfully!");
+        navigate("/manage-students");
     } catch (error) {
-      console.error("Error creating student:", error);
-      toast.error(error.message || "Failed to create student");
+        toast.error(error.message);
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
-  };
+};
 
   const goToManageStudents = () => {
     navigate("/manage-students");

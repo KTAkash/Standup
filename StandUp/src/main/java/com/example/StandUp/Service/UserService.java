@@ -46,9 +46,14 @@ public class UserService {
             throw new RuntimeException("User already exists!");
         }
 
+        String finalPassword = password;
+        if (!password.startsWith("$2a$")) {
+            finalPassword = passwordEncoder.encode(password);
+        }
+
         User user = User.builder()
                 .username(username)
-                .password(passwordEncoder.encode(password))
+                .password(password)
                 .role(role)
                 .build();
 

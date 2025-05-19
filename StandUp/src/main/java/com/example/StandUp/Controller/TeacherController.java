@@ -53,7 +53,7 @@ public class TeacherController {
             Teacher teacher = Teacher.builder()
                     .name(teacherDTO.getName())
                     .username(teacherDTO.getUsername())
-                    .password(passwordEncoder.encode(teacherDTO.getPassword()))
+                    .password(teacherDTO.getPassword())
                     .modules(modules)
                     .active(teacherDTO.getActive() != null ? teacherDTO.getActive() : true)
                     .build();

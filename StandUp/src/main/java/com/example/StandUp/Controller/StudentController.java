@@ -4,6 +4,8 @@ import com.example.StandUp.Entity.Module;
 import com.example.StandUp.DTO.StudentDTO;
 import com.example.StandUp.Entity.Assignment;
 import com.example.StandUp.Entity.Student;
+import com.example.StandUp.Entity.User;
+import com.example.StandUp.Enum.Role;
 import com.example.StandUp.Service.StudentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -52,17 +54,27 @@ public class StudentController {
     @PostMapping("/student")
     public ResponseEntity<?> createStudent(@RequestBody StudentDTO studentDTO) {
         try {
-            // Fetch Module entities by IDs
+            // First create the User part
+            User user = User.builder()
+                    .username(studentDTO.getUsername())
+                    .password(studentDTO.getPassword())
+                    .role(Role.STUDENT)
+                    .build();
+
+            // Then create the Student with relationships
             Set<Module> modules = studentService.getModulesByIds(studentDTO.getModuleIds());
 
             Student student = Student.builder()
                     .name(studentDTO.getName())
-                    .username(studentDTO.getUsername())
-                    .password(passwordEncoder.encode(studentDTO.getPassword()))
                     .enrollmentNumber(studentDTO.getEnrollmentNumber())
                     .modules(modules)
-                    .active(studentDTO.getActive() != null ? studentDTO.getActive() : true)
+                    .active(true)
                     .build();
+
+            // Set the inheritance relationship
+            student.setUsername(user.getUsername());
+            student.setPassword(user.getPassword());
+            student.setRole(user.getRole());
 
             Student createdStudent = studentService.createStudent(student);
             return ResponseEntity.ok(createdStudent);
@@ -71,7 +83,6 @@ public class StudentController {
                     .body("Error creating student: " + e.getMessage());
         }
     }
-
     // Update student
     @PutMapping("/update-student/{studentId}")
     public ResponseEntity<?> updateStudent(

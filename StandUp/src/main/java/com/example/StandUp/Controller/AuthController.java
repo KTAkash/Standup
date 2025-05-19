@@ -3,6 +3,7 @@ package com.example.StandUp.Controller;
 import com.example.StandUp.Entity.User;
 import com.example.StandUp.Enum.Role;
 import com.example.StandUp.JWT.Jwt;
+import com.example.StandUp.Repository.UserRepository;
 import com.example.StandUp.Service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,45 +21,39 @@ public class AuthController {
 
     private final UserService userService;
     private final Jwt jwt;
+    private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder; // Inject PasswordEncoder
 
     // Login endpoint
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody User loginUser) {
         try {
-            // Check if user exists
-            User authenticatedUser = userService.getUserByUsername(loginUser.getUsername());
-            if (authenticatedUser == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("message", "Invalid username"));
-            }
+            // Check both User and Student tables
+            User authenticatedUser = userRepository.findByUsername(loginUser.getUsername())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // Check if password matches
+            // Verify password match
             if (!passwordEncoder.matches(loginUser.getPassword(), authenticatedUser.getPassword())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("message", "Invalid password"));
             }
 
-            // Generate JWT token if authenticated
+            // Generate token
             String token = jwt.generateToken(
                     authenticatedUser.getUsername(),
                     authenticatedUser.getRole().name()
             );
 
-            // Return the token with success message
             return ResponseEntity.ok(Map.of(
-                    "message", "Login successful",
                     "token", token,
-                    "role", authenticatedUser.getRole().name(),
+                    "role", authenticatedUser.getRole(),
                     "username", authenticatedUser.getUsername()
             ));
-
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Login failed: " + e.getMessage()));
         }
     }
-
     // Create admin
     @PostMapping("/create-admin")
     public ResponseEntity<?> createAdmin(@RequestBody User adminUser) {
@@ -98,6 +93,8 @@ public class AuthController {
     public ResponseEntity<String> createStudent(@RequestBody User studentUser) {
         try {
             studentUser.setRole(Role.STUDENT);
+            studentUser.setPassword(passwordEncoder.encode(studentUser.getPassword()));
+
             userService.registerUser(studentUser.getUsername(), studentUser.getPassword(), studentUser.getRole());
             return ResponseEntity.ok("Student created successfully");
         } catch (RuntimeException e) {

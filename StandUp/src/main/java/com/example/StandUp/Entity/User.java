@@ -9,7 +9,7 @@ import lombok.experimental.SuperBuilder;
 @Table(name = "users")
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
-@DiscriminatorColumn(name = "user_type", discriminatorType = DiscriminatorType.STRING)
+@DiscriminatorColumn(name = "user_type")
 @Getter
 @Setter
 @SuperBuilder
