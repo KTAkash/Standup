@@ -1,11 +1,14 @@
 package com.example.StandUp.Entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -21,6 +24,9 @@ public class Module {
 
     private String moduleName;
 
+    @ManyToMany(mappedBy = "modules", fetch = FetchType.LAZY)
+    @JsonIgnore
+    private Set<Student> students = new HashSet<>();
     @OneToMany(mappedBy = "module", fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Topic> topics = new ArrayList<>();

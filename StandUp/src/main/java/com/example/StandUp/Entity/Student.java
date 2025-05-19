@@ -18,7 +18,7 @@ import java.util.Set;
 @SuperBuilder
 public class Student extends User {
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "student_modules",
             joinColumns = @JoinColumn(name = "student_id"),

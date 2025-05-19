@@ -14,7 +14,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @RestController
@@ -94,28 +96,29 @@ public class StudentController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Student not found");
             }
 
+            // Update fields from DTO
             if (updatedStudentDTO.getName() != null) {
                 existingStudent.setName(updatedStudentDTO.getName());
             }
-
             if (updatedStudentDTO.getEnrollmentNumber() != null) {
                 existingStudent.setEnrollmentNumber(updatedStudentDTO.getEnrollmentNumber());
             }
+            if (updatedStudentDTO.getActive() != null) {
+                existingStudent.setActive(updatedStudentDTO.getActive());
+            }
 
+            // Handle password update
+            if (updatedStudentDTO.getPassword() != null && !updatedStudentDTO.getPassword().isEmpty()) {
+                existingStudent.setPassword(updatedStudentDTO.getPassword()); // Service will encode it
+            }
+
+            // Handle modules update
             if (updatedStudentDTO.getModuleIds() != null) {
                 Set<Module> modules = studentService.getModulesByIds(updatedStudentDTO.getModuleIds());
                 existingStudent.setModules(modules);
             }
 
-            if (updatedStudentDTO.getActive() != null) {
-                existingStudent.setActive(updatedStudentDTO.getActive());
-            }
-
-            if (updatedStudentDTO.getPassword() != null && !updatedStudentDTO.getPassword().isEmpty()) {
-                existingStudent.setPassword(passwordEncoder.encode(updatedStudentDTO.getPassword()));
-            }
-
-            Student savedStudent = studentService.updateStudent(studentId,existingStudent);
+            Student savedStudent = studentService.updateStudent(studentId, existingStudent);
             return ResponseEntity.ok(savedStudent);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -148,5 +151,21 @@ public class StudentController {
             this.assignments = assignments;
         }
     }
+
+    @DeleteMapping("/delete-student/{id}")
+    public ResponseEntity<?> deleteStudent(@PathVariable Long id) {
+        try {
+            studentService.deleteStudent(id);
+
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Student deleted successfully");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Error deleting student: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
 }
 

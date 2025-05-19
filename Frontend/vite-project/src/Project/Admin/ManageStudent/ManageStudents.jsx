@@ -110,32 +110,39 @@ export default function ManageStudents() {
   };
 
   const deleteStudent = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this student?")) return;
+  if (!window.confirm("Are you sure you want to permanently delete this student? This action cannot be undone.")) {
+    return;
+  }
 
-    const token = localStorage.getItem("token");
-    try {
-      const response = await fetch(`http://localhost:8000/su/delete-student/${id}`, {
-        method: "DELETE",
-        headers: {
-          "Authorization": `Bearer ${token}`
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 401 || response.status === 403) {
-          handleLogout();
-          return;
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
+  const token = localStorage.getItem("token");
+  try {
+    const response = await fetch(`http://localhost:8000/su/delete-student/${id}`, {
+      method: "DELETE",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json"
       }
+    });
 
-      setStudents((prev) => prev.filter((student) => student.id !== id));
-      toast.success("Student deleted successfully!");
-    } catch (error) {
-      console.error("Error deleting student:", error);
-      toast.error("Failed to delete student.");
+    const result = await response.json();
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        handleLogout();
+        return;
+      }
+      throw new Error(result.message || "Failed to delete student");
     }
-  };
+
+    // Update state by filtering out the deleted student
+    setStudents(prevStudents => prevStudents.filter(student => student.id !== id));
+    
+    toast.success(result.message || "Student deleted successfully!");
+  } catch (error) {
+    console.error("Error deleting student:", error);
+    toast.error(error.message || "Failed to delete student. Please try again.");
+  }
+};
 
   // Helper function to display module names
   const displayModules = (modules) => {
