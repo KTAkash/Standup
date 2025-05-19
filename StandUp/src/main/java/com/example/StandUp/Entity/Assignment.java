@@ -1,5 +1,6 @@
 package com.example.StandUp.Entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -29,15 +30,17 @@ public class Assignment {
     @JoinColumn(name = "teacher_id", nullable = false)
     private Teacher teacher;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "module_id", nullable = false)
     private Module module;
 
     @ManyToOne
     @JoinColumn(name = "topic_id")
+    @JsonBackReference
     private Topic topic;
 
     @ManyToOne
     @JoinColumn(name = "student_id")
+    @JsonBackReference
     private Student student;
 }

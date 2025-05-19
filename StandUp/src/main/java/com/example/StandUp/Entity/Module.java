@@ -1,9 +1,10 @@
 package com.example.StandUp.Entity;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;  // add this import
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -20,11 +21,11 @@ public class Module {
 
     private String moduleName;
 
-    @OneToMany(mappedBy = "module", cascade = CascadeType.ALL)
-    // Prevent infinite recursion on serialization
-    private List<Topic> topics;
+    @OneToMany(mappedBy = "module", fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<Topic> topics = new ArrayList<>();
 
     @OneToMany(mappedBy = "module", cascade = CascadeType.ALL)
-
+    @JsonIgnore
     private List<Assignment> assignments;
 }

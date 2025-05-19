@@ -1,6 +1,5 @@
 package com.example.StandUp.Entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;  // add this import
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -11,14 +10,18 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class Topic {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String topicName;
 
-    @ManyToOne
+    // Other fields as needed
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "module_id")
-    @JsonBackReference  // Prevent infinite recursion on serialization
     private Module module;
+
+    // Other relationships or fields as needed
 }
