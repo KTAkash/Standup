@@ -88,6 +88,14 @@ public class TeacherService {
         return assignmentRepository.findById(assignmentId).orElse(null);
     }
 
+    public Module getModuleById(Long moduleId) {
+        return moduleRepository.findById(moduleId).orElse(null);
+    }
+    public Student getStudentById(Long studentId) {
+        return studentRepository.findById(studentId).orElse(null);
+    }
+
+
     public Credit assignCredit(Credit credit) {
         return creditRepository.save(credit);
     }

@@ -2,6 +2,7 @@ package com.example.StandUp.Entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -21,6 +22,9 @@ public class Assignment {
     @Column(name = "description")
     private String description;
 
+    @Column(name = "due_date")
+    private LocalDateTime dueDate;
+
     @ManyToOne
     @JoinColumn(name = "teacher_id", nullable = false)
     private Teacher teacher;
@@ -30,8 +34,10 @@ public class Assignment {
     private Module module;
 
     @ManyToOne
-    @JoinColumn(name = "student_id") // or whatever your FK column is named
+    @JoinColumn(name = "topic_id")
+    private Topic topic;
+
+    @ManyToOne
+    @JoinColumn(name = "student_id")
     private Student student;
-
 }
-

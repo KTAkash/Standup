@@ -1,12 +1,11 @@
 package com.example.StandUp.Controller;
 
+import com.example.StandUp.DTO.AssignmentRequest;
 import com.example.StandUp.DTO.TeacherDTO;
-import com.example.StandUp.Entity.Assignment;
-import com.example.StandUp.Entity.Credit;
-import com.example.StandUp.Entity.Feedback;
+import com.example.StandUp.Entity.*;
 import com.example.StandUp.Entity.Module;
-import com.example.StandUp.Entity.Teacher;
 import com.example.StandUp.Service.TeacherService;
+import com.example.StandUp.Service.TopicService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @RestController
@@ -23,6 +23,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class TeacherController {
 
+    private final TopicService topicService;
     private final TeacherService teacherService;
     private final PasswordEncoder passwordEncoder;
 
@@ -122,7 +123,7 @@ public class TeacherController {
 
     // Create Assignment
     @PostMapping("/teacher/create-assignment")
-    public ResponseEntity<?> createAssignment(@RequestBody Assignment assignment, Authentication authentication) {
+    public ResponseEntity<?> createAssignment(@RequestBody AssignmentRequest assignmentRequest, Authentication authentication) {
         try {
             String username = authentication.getName();
             Teacher teacher = teacherService.getTeacherByUsername(username);
@@ -130,16 +131,46 @@ public class TeacherController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Teacher not found");
             }
 
+            // Create new assignment
+            Assignment assignment = new Assignment();
+            assignment.setTitle(assignmentRequest.getTitle());
+            assignment.setDescription(assignmentRequest.getDescription());
+            assignment.setDueDate(assignmentRequest.getDueDate());
             assignment.setTeacher(teacher);
-            Assignment createdAssignment = teacherService.createAssignment(assignment);
 
+            // Set module
+            Module module = teacherService.getModuleById(assignmentRequest.getModuleId());
+            if (module == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Module not found");
+            }
+            assignment.setModule(module);
+
+            // Set topic if provided
+            if (assignmentRequest.getTopicId() != null) {
+                Optional<Topic> optionalTopic = topicService.getTopicById(assignmentRequest.getTopicId());
+                if (optionalTopic.isEmpty()) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Topic not found");
+                }
+                assignment.setTopic(optionalTopic.get());
+
+            }
+
+            // Set student if provided
+            if (assignmentRequest.getStudentId() != null) {
+                Student student = teacherService.getStudentById(assignmentRequest.getStudentId());
+                if (student == null) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Student not found");
+                }
+                assignment.setStudent(student);
+            }
+
+            Assignment createdAssignment = teacherService.createAssignment(assignment);
             return ResponseEntity.ok(createdAssignment);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error creating assignment: " + e.getMessage());
         }
     }
-
     // Assign Credit to Student for an Assignment
     @PostMapping("/teacher/assignment/{assignmentId}/give-credit")
     public ResponseEntity<?> assignCredit(

@@ -61,6 +61,9 @@ public class SecurityConfig {
 
                         // Admin, Teacher, Student can view teachers/students
                         .requestMatchers("/su/teachers").hasAnyRole("ADMIN", "TEACHER")
+                        .requestMatchers("/su/**").hasAnyRole("ADMIN", "TEACHER")
+                        .requestMatchers("/su/teacher/dashboard").hasAnyRole("ADMIN", "TEACHER")
+
                         .requestMatchers("/su/students").hasAnyRole("ADMIN", "TEACHER", "STUDENT")
 
                         // Module access

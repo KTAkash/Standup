@@ -1,27 +1,29 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 export default function CreateAssignment() {
+  const { moduleId } = useParams();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [teacher, setTeacher] = useState(null);
+  const [topics, setTopics] = useState([]);
+  const [modules, setModules] = useState([]);
 
-  // Form state matching your Assignment entity
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    module: '',
-    studentId: null // Optional student assignment
+    moduleId: moduleId || '',
+    topicId: '',
+    dueDate: '',
+    studentId: null
   });
 
   const [validationErrors, setValidationErrors] = useState({});
 
-  // Fetch teacher data on mount
   useEffect(() => {
-    const fetchTeacher = async () => {
+    const fetchData = async () => {
       const token = localStorage.getItem("token");
       if (!token) {
         navigate("/login");
@@ -29,7 +31,7 @@ export default function CreateAssignment() {
       }
 
       try {
-        const response = await fetch("http://localhost:8000/su/teacher/dashboard", {
+        const teacherResponse = await fetch("http://localhost:8000/su/teacher/dashboard", {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -38,23 +40,69 @@ export default function CreateAssignment() {
           credentials: "include"
         });
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch teacher data: ${response.status}`);
+        if (!teacherResponse.ok) {
+          throw new Error(`Failed to fetch teacher data: ${teacherResponse.status}`);
+        }
+        const teacherData = await teacherResponse.json();
+        setModules(teacherData.teacher.modules || []);
+
+        if (moduleId) {
+          const topicsResponse = await fetch(`http://localhost:8000/su/topics/module/${moduleId}`, {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json"
+            },
+            credentials: "include"
+          });
+
+          if (!topicsResponse.ok) {
+            throw new Error(`Failed to fetch topics: ${topicsResponse.status}`);
+          }
+          const topicsData = await topicsResponse.json();
+          setTopics(topicsData);
         }
 
-        const data = await response.json();
-        setTeacher(data.teacher);
       } catch (error) {
-        console.error("Error fetching teacher:", error);
+        console.error("Error fetching data:", error);
         setError(error.message);
-        toast.error("Failed to load teacher data");
+        toast.error("Failed to load data");
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchTeacher();
-  }, [navigate]);
+    fetchData();
+  }, [moduleId, navigate]);
+
+  useEffect(() => {
+    if (formData.moduleId && !moduleId) {
+      const fetchTopics = async () => {
+        const token = localStorage.getItem("token");
+        try {
+          const response = await fetch(`http://localhost:8000/su/topics/module/${formData.moduleId}`, {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json"
+            },
+            credentials: "include"
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to fetch topics');
+          }
+          const data = await response.json();
+          setTopics(data);
+        } catch (err) {
+          console.error("Error fetching topics:", err);
+          toast.error("Failed to load topics");
+        }
+      };
+
+      fetchTopics();
+    }
+  }, [formData.moduleId, moduleId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -63,7 +111,6 @@ export default function CreateAssignment() {
       [name]: value
     }));
     
-    // Clear validation error when user types
     if (validationErrors[name]) {
       setValidationErrors(prev => ({
         ...prev,
@@ -86,8 +133,13 @@ export default function CreateAssignment() {
       isValid = false;
     }
 
-    if (!formData.module) {
-      errors.module = 'Module is required';
+    if (!formData.moduleId) {
+      errors.moduleId = 'Module is required';
+      isValid = false;
+    }
+
+    if (!formData.dueDate) {
+      errors.dueDate = 'Due date is required';
       isValid = false;
     }
 
@@ -104,18 +156,24 @@ export default function CreateAssignment() {
     }
 
     const token = localStorage.getItem("token");
-    
+
     try {
+      const formattedData = {
+        title: formData.title,
+        description: formData.description,
+        moduleId: formData.moduleId,
+        topicId: formData.topicId || null,
+        studentId: formData.studentId || null,
+        dueDate: formData.dueDate
+      };
+      
       const response = await fetch("http://localhost:8000/su/teacher/create-assignment", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          ...formData,
-          teacherId: teacher?.id // Include teacher ID from state
-        }),
+        body: JSON.stringify(formattedData),
         credentials: "include"
       });
 
@@ -124,9 +182,8 @@ export default function CreateAssignment() {
         throw new Error(errorData.message || 'Failed to create assignment');
       }
 
-      const data = await response.json();
       toast.success("Assignment created successfully!");
-      navigate(`/assignment/${data.id}`);
+      navigate(moduleId ? `/teacher/modules/${moduleId}/assignments` : "/teacher");
     } catch (error) {
       console.error("Error creating assignment:", error);
       toast.error(error.message || "Error creating assignment");
@@ -140,10 +197,14 @@ export default function CreateAssignment() {
     toast.info("Logged out successfully");
   };
 
+  // ... UI/JSX part stays exactly the same
+
+
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-2xl font-semibold">Loading teacher data...</div>
+        <div className="text-2xl font-semibold">Loading data...</div>
       </div>
     );
   }
@@ -173,7 +234,10 @@ export default function CreateAssignment() {
       {/* Header */}
       <header className="bg-indigo-700 text-white py-4 px-6 flex justify-between items-center shadow-md">
         <div className="flex items-center space-x-4">
-          <Link to="/teacher" className="text-white hover:text-indigo-200 transition-colors">
+          <Link 
+            to={moduleId ? `/teacher/modules/${moduleId}` : "/teacher"} 
+            className="text-white hover:text-indigo-200 transition-colors"
+          >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
@@ -192,7 +256,7 @@ export default function CreateAssignment() {
       <div className="flex-grow p-6 max-w-3xl mx-auto w-full">
         <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 p-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-2">
-            Create New Assignment
+            {moduleId ? `Create Assignment for Module` : 'Create New Assignment'}
           </h2>
           
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -230,21 +294,63 @@ export default function CreateAssignment() {
               )}
             </div>
 
-            {/* Module Field */}
+            {/* Module Dropdown (only shown if not coming from specific module) */}
+            {!moduleId && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Module*</label>
+                <select
+                  name="moduleId"
+                  value={formData.moduleId}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-2 border ${validationErrors.moduleId ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-indigo-500 focus:border-indigo-500`}
+                  required
+                >
+                  <option value="">Select a module</option>
+                  {modules.map(module => (
+                    <option key={module.id} value={module.id}>
+                      {module.moduleName} ({module.moduleCode})
+                    </option>
+                  ))}
+                </select>
+                {validationErrors.moduleId && (
+                  <p className="mt-1 text-sm text-red-600">{validationErrors.moduleId}</p>
+                )}
+              </div>
+            )}
+
+            {/* Topic Dropdown (only shown if module is selected) */}
+            {(moduleId || formData.moduleId) && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Topic (Optional)</label>
+                <select
+                  name="topicId"
+                  value={formData.topicId}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <option value="">Select a topic (optional)</option>
+                  {topics.map(topic => (
+                    <option key={topic.id} value={topic.id}>{topic.topicName}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Due Date Field */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Module*</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Due Date*</label>
               <input 
-                type="text" 
-                name="module"
-                value={formData.module}
+                type="datetime-local" 
+                name="dueDate"
+                value={formData.dueDate}
                 onChange={handleChange}
-                className={`w-full px-4 py-2 border ${validationErrors.module ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-indigo-500 focus:border-indigo-500`}
-                placeholder="Enter module name/code"
+                className={`w-full px-4 py-2 border ${validationErrors.dueDate ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:ring-indigo-500 focus:border-indigo-500`}
                 required
               />
-              {validationErrors.module && (
-                <p className="mt-1 text-sm text-red-600">{validationErrors.module}</p>
+              {validationErrors.dueDate && (
+                <p className="mt-1 text-sm text-red-600">{validationErrors.dueDate}</p>
               )}
+              <p className="mt-1 text-xs text-gray-500">Format: YYYY-MM-DD HH:MM</p>
             </div>
 
             {/* Optional Student Assignment */}
@@ -264,7 +370,10 @@ export default function CreateAssignment() {
 
             {/* Form Actions */}
             <div className="flex justify-end space-x-3 pt-4">
-              <Link to="/teacher" className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+              <Link 
+                to={moduleId ? `/teacher/modules/${moduleId}` : "/teacher"} 
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              >
                 Cancel
               </Link>
               <button 
